@@ -48,6 +48,7 @@ app.get("/", (req, res) => {
     author: "Anuj",
   });
 });
+app.use("/api/todos", require("./routes/todos"));
 
 const port = process.env.PORT || 5000;
 
