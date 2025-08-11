@@ -1,0 +1,34 @@
+"node_modules/" 
+".env" 
+"*.log" 
+# Node modules (most important!)
+**/node_modules/
+node_modules/
+
+# Environment files
+**/.env
+.env
+.env.local
+
+**/node_modules/
+**/.env
+.env
+*.log
+
+# Package lock files (optional - some teams include these)
+package-lock.json
+
+# Build folders
+build/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
