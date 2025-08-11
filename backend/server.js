@@ -22,10 +22,10 @@ console.log("Middleware setup complete");
 console.log("Connecting to database...");
 
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  database: process.env.DB_NAME || "my_database",
 });
 
 db.connect((err) => {
@@ -38,9 +38,11 @@ db.connect((err) => {
   console.log(`Database connection details:
   Host: ${process.env.DB_HOST}
   User: ${process.env.DB_USER}
-  Database: ${process.env.DB_NAME}
-`);
+  Database: ${process.env.DB_NAME}`);
 });
+
+global.db = db;
+
 app.get("/", (req, res) => {
   res.send({
     message: "🚀 Backend is running!",
