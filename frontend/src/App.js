@@ -1,47 +1,65 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginPage from './pages/LoginPage';
+// ============================================================================
+// APP COMPONENT - Main application entry point
+// ============================================================================
+// This is the root component that manages the entire application state
+
+import React, { useState } from 'react';
+import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import './App.css';
 
-const ProtectedRoute = ({ children }) => {
-    const { user } = useAuth();
-    return user ? children : <Navigate to="/login" />;
-};
+// APP COMPONENT DEFINITION
+// ========================
+// This component manages the global application state and routing
+function App() {
+    console.log("🎯 App component initialized");
 
-const AppRoutes = () => {
-    const { user } = useAuth();
+    // GLOBAL APPLICATION STATE
+    // ========================
+    // user: stores logged-in user data (null = not logged in, object = logged in)
+    const [user, setUser] = useState(null);
+
+    // LOGIN HANDLER
+    // =============
+    // Called when user successfully logs in
+    const handleLogin = (userData) => {
+        console.log(`✅ App: User logged in successfully - ${userData.username}`);
+        setUser(userData);  // Store user data in state
+    };
+
+    // LOGOUT HANDLER
+    // ==============
+    // Called when user wants to log out
+    const handleLogout = () => {
+        console.log("🚪 App: User logging out");
+        setUser(null);  // Clear user data from state
+    };
+
+    // CONDITIONAL RENDERING
+    // =====================
+    // Show different components based on authentication state
+
+    console.log(`🎯 App rendering - User logged in: ${!!user}`);
 
     return (
-        <Routes>
-            <Route
-                path="/login"
-                element={user ? <Navigate to="/dashboard" /> : <LoginPage />}
-            />
-            <Route
-                path="/dashboard"
-                element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                }
-            />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
+        <div className="app">
+            {/* AUTHENTICATION CHECK */}
+            {/* If user exists, show Dashboard; otherwise show AuthPage */}
+            {user ? (
+                // USER IS LOGGED IN - Show Dashboard
+                <Dashboard
+                    user={user}                             // Pass user data
+                    onLogout={handleLogout}                 // Pass logout handler
+                />
+            ) : (
+                // USER IS NOT LOGGED IN - Show Authentication
+                <AuthPage
+                    onLogin={handleLogin}                   // Pass login handler
+                />
+            )}
+        </div>
     );
-};
+}
 
-const App = () => {
-    return (
-        <AuthProvider>
-            <Router>
-                <div className="App">
-                    <AppRoutes />
-                </div>
-            </Router>
-        </AuthProvider>
-    );
-};
-
+// Export App component for use in index.js
 export default App;
