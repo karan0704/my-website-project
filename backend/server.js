@@ -1,12 +1,12 @@
 ﻿//Packages
 const express = require("express");
-
 mysql = require("mysql2");
 const cors = require("cors");
 require("dotenv").config();
 
+//------------//express server create--------------------------------------
 const app = express();
-console.log("Middleware setup in process");
+console.log("setup in process");
 
 app.use(
   cors({
@@ -14,10 +14,14 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 console.log("Middleware setup complete");
+//--------------------------------------------------
+//--------------------------------------------------
+
+//DB Connect-----------------------------------------
 
 console.log("Connecting to database...");
 
@@ -43,6 +47,16 @@ db.connect((err) => {
 
 global.db = db;
 
+//--------------------------------------------------
+//--------------------------------------------------
+
+app.use("/api/todos", require("./routes/todos")); //load todo route
+
+//control goes to todos route
+app.use("/api/auth", require("./routes/auth")); // Add auth routes
+
+//--------------------------------------------------
+//--------------------------------------------------
 app.get("/", (req, res) => {
   res.send({
     message: "🚀 Backend is running!",
@@ -50,7 +64,6 @@ app.get("/", (req, res) => {
     author: "Anuj",
   });
 });
-app.use("/api/todos", require("./routes/todos"));
 
 const port = process.env.PORT || 5000;
 
