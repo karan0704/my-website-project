@@ -1,126 +1,143 @@
 // ============================================================================
-// LOGIN FORM COMPONENT - Handles user login functionality
+// LOGIN FORM COMPONENT - Simple Login Form for Beginners
 // ============================================================================
-// This component provides a form for existing users to log into their accounts
+// 🎯 This component creates a login form where users can enter credentials
+// It talks to the backend through our API service
 
 import React, { useState } from 'react';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
 import Message from '../UI/Message';
 import { validateUsername, validatePassword } from '../../utils/validation';
+import { loginUser, APP_CONFIG } from '../../services/api';
 
-// LOGIN FORM COMPONENT DEFINITION
-// ================================
-// Props explanation:
-// - onLogin: Function called when login is successful (passed from parent)
-// - loading: Whether API call is in progress (passed from parent)
+// MAIN LOGIN FORM COMPONENT
+// =========================
+// Props (data passed from parent component):
+// - onLogin: function to call when login is successful
+// - loading: true/false if login request is happening
 const LoginForm = ({ onLogin, loading }) => {
-    console.log("🔐 LoginForm component initialized");
+    console.log("🔐 LoginForm component started");
 
-    // COMPONENT STATE
-    // ===============
-    // useState hooks manage component's internal state
-    const [username, setUsername] = useState('');     // Username input value
-    const [password, setPassword] = useState('');     // Password input value
-    const [errors, setErrors] = useState({});         // Field validation errors
+    // COMPONENT STATE (data this component remembers)
+    // ===============================================
+    // Think of state like the component's memory
+
+    // Form input values
+    const [username, setUsername] = useState('');     // What user typed in username field
+    const [password, setPassword] = useState('');     // What user typed in password field
+
+    // Error handling
+    const [errors, setErrors] = useState({});         // Validation errors for each field
     const [error, setError] = useState('');           // General error message
 
     // FORM VALIDATION FUNCTION
-    // =========================
-    // Validates form inputs before submission
+    // ========================
+    // Check if the form inputs are valid before sending to backend
     const validateForm = () => {
-        console.log("🔍 Validating login form...");
+        console.log("🔍 Checking if form is valid...");
 
-        const newErrors = {};  // Object to collect validation errors
+        // Object to collect any errors we find
+        const newErrors = {};
 
-        // Validate username using utility function
+        // Check username using our validation function
         const usernameError = validateUsername(username);
-        if (usernameError) newErrors.username = usernameError;
+        if (usernameError) {
+            newErrors.username = usernameError;
+            console.log("❌ Username error:", usernameError);
+        }
 
-        // Validate password using utility function
+        // Check password using our validation function
         const passwordError = validatePassword(password);
-        if (passwordError) newErrors.password = passwordError;
+        if (passwordError) {
+            newErrors.password = passwordError;
+            console.log("❌ Password error:", passwordError);
+        }
 
-        // Update errors state
+        // Update the errors state
         setErrors(newErrors);
 
         // Return true if no errors, false if there are errors
         const isValid = Object.keys(newErrors).length === 0;
-        console.log(`✅ Form validation result: ${isValid ? 'Valid' : 'Invalid'}`);
+        console.log(`✅ Form is ${isValid ? 'valid' : 'invalid'}`);
         return isValid;
     };
 
     // FORM SUBMISSION HANDLER
     // =======================
-    // Called when user submits the login form
-    const handleSubmit = async (e) => {
-        // Prevent default form submission (which would refresh the page)
-        e.preventDefault();
-        console.log("📤 Login form submitted");
+    // This function runs when user clicks the login button
+    const handleSubmit = async (event) => {
+        // Stop the form from refreshing the page (default browser behavior)
+        event.preventDefault();
+        console.log("📤 User clicked login button");
 
         // Clear any previous error messages
         setError('');
 
-        // Validate form before submission
+        // Check if form is valid before sending to backend
         if (!validateForm()) {
-            console.log("❌ Form validation failed");
-            return;  // Stop submission if validation fails
+            console.log("❌ Form validation failed, not sending to backend");
+            return; // Stop here if form is invalid
         }
 
         try {
-            console.log(`🚀 Attempting login for user: ${username}`);
+            console.log(`🚀 Trying to login user: ${username}`);
 
-            // Call parent's login function (which makes API call)
-            await onLogin(username, password);
+            // Call our API service to login user
+            // This sends HTTP request to backend
+            const response = await loginUser(username, password);
 
-            console.log("✅ Login successful");
+            console.log("✅ Login successful!");
+
+            // Tell the parent component (App.js) that login worked
+            // Pass the user data we got back from backend
+            onLogin(response.user);
 
         } catch (err) {
-            // Handle login errors
+            // If login failed, show error message to user
             console.error("❌ Login failed:", err.message);
-            setError(err.message || 'Login failed');
+            setError(err.message || 'Login failed. Please try again.');
         }
     };
 
-    // COMPONENT RENDER
-    // ================
+    // RENDER THE COMPONENT (what user sees on screen)
+    // ===============================================
     return (
-        <div className="auth-form-container">
-            {/* FORM ELEMENT */}
-            {/* onSubmit handler prevents page refresh and calls our function */}
+        <div className="login-form">
+            {/* FORM TITLE */}
+            <h2 className="form-title">
+                🔐 Login
+            </h2>
+
+            {/* ERROR MESSAGE (only shows if there's an error) */}
+            <Message message={error} type="error" />
+
+            {/* THE ACTUAL FORM */}
             <form onSubmit={handleSubmit} className="auth-form">
 
-                {/* FORM TITLE */}
-                <h2 className="form-title">🔐 Login</h2>
-
-                {/* ERROR MESSAGE */}
-                {/* Only displayed if there's a general error */}
-                <Message message={error} type="error" />
-
-                {/* USERNAME INPUT */}
-                {/* This is a "controlled component" - React manages the value */}
+                {/* USERNAME INPUT FIELD */}
                 <Input
-                    id="login-username"                      // Unique ID for accessibility
-                    label="👤 Username"                      // Label text
-                    type="text"                              // Input type
-                    value={username}                         // Current value from state
-                    onChange={(e) => {                       // Function called when user types
-                        console.log(`👤 Username input: ${e.target.value}`);
-                        setUsername(e.target.value);           // Update state with new value
+                    id="login-username"
+                    label="👤 Username"
+                    type="text"
+                    value={username}                        // Current value from state
+                    onChange={(e) => {                      // Function that runs when user types
+                        console.log(`👤 User typing username: ${e.target.value}`);
+                        setUsername(e.target.value);          // Update state with what user typed
                     }}
-                    placeholder="Enter your username"        // Hint text
-                    disabled={loading}                       // Disable during API calls
-                    error={errors.username}                  // Show validation error if any
+                    placeholder="Enter your username"
+                    disabled={loading}                      // Disable input when login is happening
+                    error={errors.username}                 // Show error if username invalid
                 />
 
-                {/* PASSWORD INPUT */}
+                {/* PASSWORD INPUT FIELD */}
                 <Input
                     id="login-password"
                     label="🔒 Password"
-                    type="password"                          // Hide password characters
+                    type="password"                         // Hides password with dots
                     value={password}
                     onChange={(e) => {
-                        console.log(`🔒 Password input (length: ${e.target.value.length})`);
+                        console.log(`🔒 User typing password (${e.target.value.length} characters)`);
                         setPassword(e.target.value);
                     }}
                     placeholder="Enter your password"
@@ -128,19 +145,26 @@ const LoginForm = ({ onLogin, loading }) => {
                     error={errors.password}
                 />
 
-                {/* SUBMIT BUTTON */}
+                {/* LOGIN BUTTON */}
                 <Button
-                    type="submit"                            // Makes button submit the form
-                    variant="primary"                        // Primary button styling
-                    fullWidth                                // Takes full width of container
-                    loading={loading}                        // Shows loading state
+                    type="submit"                           // Makes button submit the form
+                    variant="primary"
+                    fullWidth={true}                        // Button takes full width
+                    loading={loading}                       // Shows loading spinner when true
                 >
                     🔐 Login
                 </Button>
             </form>
+
+            {/* DEBUG INFO (only shows in development) */}
+            {APP_CONFIG.IS_DEVELOPMENT && (
+                <div className="debug-info">
+                    <p>🔧 Debug: Using API {APP_CONFIG.API_BASE_URL}</p>
+                </div>
+            )}
         </div>
     );
 };
 
-// Export component for use in other files
+// Export so other files can import and use this component
 export default LoginForm;

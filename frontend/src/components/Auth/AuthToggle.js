@@ -1,32 +1,24 @@
 // ============================================================================
-// AUTH TOGGLE COMPONENT - Switch between login and register forms
+// AUTH TOGGLE COMPONENT - Switch Between Login and Register
 // ============================================================================
-// This component provides a way to switch between login and registration modes
+// 🎯 This component provides a button to switch between login and register forms
 
 import React from 'react';
 import Button from '../UI/Button';
 
-// AUTH TOGGLE COMPONENT DEFINITION
-// =================================
-// Props explanation:
-// - isRegister: Boolean indicating current mode (true = register, false = login)
-// - onToggle: Function called when user wants to switch modes
-// - loading: Whether to disable toggle during API calls
 const AuthToggle = ({ isRegister, onToggle, loading }) => {
-    console.log(`🔄 AuthToggle component - Current mode: ${isRegister ? 'Register' : 'Login'}`);
+    console.log(`🔄 AuthToggle - Current mode: ${isRegister ? 'Register' : 'Login'}`);
 
-    // TOGGLE CLICK HANDLER
-    // ====================
-    // Called when user clicks the toggle button
+    // TOGGLE BUTTON CLICK
+    // ===================
     const handleToggle = () => {
-        console.log(`🔄 Switching from ${isRegister ? 'Register' : 'Login'} to ${isRegister ? 'Login' : 'Register'}`);
-        onToggle();  // Call parent function to switch modes
+        console.log(`🔄 User wants to switch to ${isRegister ? 'Login' : 'Register'} mode`);
+        onToggle(); // Call the function passed from parent
     };
 
     return (
         <div className="auth-toggle">
-            {/* TOGGLE MESSAGE */}
-            {/* Different message based on current mode */}
+            {/* MESSAGE BASED ON CURRENT MODE */}
             <p className="toggle-message">
                 {isRegister ?
                     '🤔 Already have an account?' :
@@ -35,11 +27,10 @@ const AuthToggle = ({ isRegister, onToggle, loading }) => {
             </p>
 
             {/* TOGGLE BUTTON */}
-            {/* Button text changes based on current mode */}
             <Button
-                variant="secondary"                        // Secondary styling (outline button)
-                onClick={handleToggle}                    // Click handler
-                disabled={loading}                        // Disable during API calls
+                variant="secondary"
+                onClick={handleToggle}
+                disabled={loading}
             >
                 {isRegister ? '🔐 Switch to Login' : '📝 Create Account'}
             </Button>
@@ -47,5 +38,4 @@ const AuthToggle = ({ isRegister, onToggle, loading }) => {
     );
 };
 
-// Export component
 export default AuthToggle;
