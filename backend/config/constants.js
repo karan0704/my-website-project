@@ -2,6 +2,10 @@
 // Single source of truth for all string constants used across the app
 
 module.exports = {
+
+    // ---- DB BACKEND SWITCH ----
+    DB_TYPE: process.env.DB_TYPE || 'MongoDB',
+
     // Database collections
     COLLECTIONS: {
         USERS: 'users',

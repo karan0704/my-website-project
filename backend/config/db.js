@@ -1,5 +1,4 @@
-// config/db.js
-// MongoDB connection setup using Mongoose
+// config/db.js - MongoDB connection setup using Mongoose
 
 const mongoose = require('mongoose');
 const { MONGO_URI } = require('./env');
