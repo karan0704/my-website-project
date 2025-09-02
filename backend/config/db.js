@@ -1,4 +1,5 @@
-// config/db.js - MongoDB connection setup using Mongoose
+// config/db.js
+// MongoDB connect
 
 const mongoose = require('mongoose');
 const { MONGO_URI } = require('./env');
@@ -6,17 +7,20 @@ const { MONGO_URI } = require('./env');
 // Configure mongoose settings
 mongoose.set('strictQuery', true);
 
-// Function to connect to MongoDB
-async function connectDB() {
-    try {
-        await mongoose.connect(MONGO_URI, {
-            autoIndex: true, // Create indexes automatically in development
+// connect to MongoDB
+function connectDB() {
+    console.log('Connecting to MongoDB...');
+
+    return mongoose.connect(MONGO_URI, {
+        autoIndex: true, // Create indexes automatically in development
+    })
+        .then(function() {
+            console.log('Connected to MongoDB');
+        })
+        .catch(function(error) {
+            console.error('MongoDB connection failed:', error.message);
+            throw error;
         });
-        console.log('✅ Connected to MongoDB');
-    } catch (error) {
-        console.error('❌ MongoDB connection failed:', error.message);
-        throw error;
-    }
 }
 
-module.exports = { connectDB };
+module.exports = { connectDB: connectDB };

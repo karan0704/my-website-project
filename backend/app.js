@@ -1,38 +1,44 @@
-// app.js - Express application setup and configuration
+// app.js -Express
 
-const express = require('express'); // Web framework
-const cors = require('cors');       // Allow frontend to call backend
+const express = require('express');
+const cors = require('cors');
 
-// Load centralized environment configuration
+// Load environment configuration
 const { FRONTEND_URL } = require('./config/env');
 
-// Import routes
+// Import routes and middleware
 const authRoutes = require('./routes/auth');
+const errorHandler = require('./middleware/errorHandler');
 
-console.log('🚀 Starting Express application...');
+console.log('Starting Express application...');
 
-// CREATE SERVER
-// =============
+// Create Express application
 const app = express();
 
-// MIDDLEWARE SETUP
-// ================
-// Tell Express how to handle requests
-app.use(cors({ origin: FRONTEND_URL })); // Allow React to call API
-app.use(express.json());                 // Read JSON from requests
+// Setup middleware (functions that run for every request)
+app.use(cors({ origin: FRONTEND_URL })); // Allow React app to call our API
+app.use(express.json());                 // Parse JSON from request body
 
-console.log('✅ Middleware setup complete');
+console.log('Middleware setup complete');
 
-// ROUTES
-// ======
-app.use('/api/auth', authRoutes); // All auth routes will be prefixed with /api/auth
+// Setup routes
+app.use('/api/auth', authRoutes); // All auth routes start with /api/auth
 
-// BASIC ROUTES
-// ============
-// Test if server running
-app.get('/', (req, res) => {
-    res.json({ message: 'Backend server running!' });
+// Basic test route
+app.get('/', function(req, res) {
+    res.json({ message: 'Backend server is running!' });
 });
 
-// Export app for use in server.js
+// Health check route
+app.get('/health', function(req, res) {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Error handler must be LAST middleware
+app.use(errorHandler);
+
+// Export app for server.js to use
 module.exports = app;

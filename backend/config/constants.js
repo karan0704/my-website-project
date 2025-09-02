@@ -39,5 +39,9 @@ module.exports = {
         PASSWORD_SHORT: 'Password too short',
         EMAIL_INVALID: 'Invalid email format',
         DUPLICATE_USER: 'Username or email already exists',
+        PROFILE_UPDATE_SUCCESS: 'Profile updated successfully',
+        CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
+        USER_NOT_FOUND: 'User not found',
+        NO_CHANGES_MADE: 'No changes were made'
     },
 };

@@ -1,22 +1,30 @@
 // config/env.js
-// Centralized environment variable loading and validation
 
-const path = require('path');
-require('dotenv').config({ path: path.resolve(process.cwd(), '.env') });
+// load .env file
+require('dotenv').config();
 
-// List of required environment variables
+// List - env var
 const required = ['MONGO_URI', 'PORT', 'FRONTEND_URL'];
 
-// Check if any required variables are missing
-const missing = required.filter(k => !process.env[k]);
-if (missing.length) {
-    console.error('❌ Missing variables in .env:', missing);
-    process.exit(1);
+// Check if req var are missing
+let missing = [];
+for (let i = 0; i < required.length; i++) {
+    const varName = required[i];
+    if (!process.env[varName]) {
+        missing.push(varName);
+    }
 }
 
-console.log('✅ Environment variables found');
+// stop server if env var is missing
+if (missing.length > 0) {
+    console.error('❌ Missing variables in .env file:', missing);
+    console.log('💡 Please add these variables to your .env file');
+    process.exit(1); // Stop the server completely
+}
 
-// Export all environment variables
+console.log('✅ All environment variables found');
+
+// Export env var
 module.exports = {
     NODE_ENV: process.env.NODE_ENV,
     PORT: Number(process.env.PORT),

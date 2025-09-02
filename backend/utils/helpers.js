@@ -1,25 +1,42 @@
-// utils/helpers.js - General utility helper functions
+// utils/helpers.js
+// Simple helper functions
 
-const formatResponse = (success, message, data = null) => {
-  return {
-    success,
-    message,
-    ...(data && { data }),
-  };
-};
+// Function to create response format
+// Parameters: success (true/false), message (string), data (optional object)
+function formatResponse(success, message, data) {
+    const response = {
+        success: success,
+        message: message
+    };
 
-const getCurrentTimestamp = () => {
-  return new Date().toISOString();
-};
+    // Only add data if something was provided
+    if (data !== undefined) {
+        response.data = data;
+    }
 
-const logRequest = (method, endpoint, user = "anonymous") => {
-  console.log(
-    `[${getCurrentTimestamp()}] ${method} ${endpoint} - User: ${user}`
-  );
-};
+    return response;
+}
 
+// Function to get current time
+function getCurrentTimestamp() {
+    return new Date().toISOString();
+}
+
+// Function to log requests
+// Parameters: method (GET/POST), endpoint (URL path), user (username or 'anonymous')
+function logRequest(method, endpoint, user) {
+    // If no user provided, use 'anonymous'
+    if (!user) {
+        user = 'anonymous';
+    }
+
+    const timestamp = getCurrentTimestamp();
+    console.log('[' + timestamp + '] ' + method + ' ' + endpoint + ' - User: ' + user);
+}
+
+// Export functions
 module.exports = {
-  formatResponse,
-  getCurrentTimestamp,
-  logRequest,
+    formatResponse: formatResponse,
+    getCurrentTimestamp: getCurrentTimestamp,
+    logRequest: logRequest
 };
