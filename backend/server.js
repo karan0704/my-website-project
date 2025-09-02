@@ -1,30 +1,24 @@
 ﻿// server.js
+// Start the server
 
-// Load env var
 require('dotenv').config();
 
-const { PORT } = require('./config/env');
-const { connectDB } = require('./config/db');
 const app = require('./app');
+const { connectDB } = require('./config/database');
 
-console.log('Starting backend server...');
+const PORT = process.env.PORT || 5010;
 
-// Check environment
-console.log('Environment check:');
-console.log('PORT:', PORT);
+console.log('Starting server...');
 
-// Connect to database FIRST, then start server
+// Connect to database first, then start server
 connectDB()
     .then(function() {
-        console.log('Database connected successfully');
-
-        // Start server
         app.listen(PORT, function() {
-            console.log('Server started on port', PORT);
+            console.log('Server running on port ' + PORT);
             console.log('API available at: http://localhost:' + PORT);
         });
     })
-    .catch(function(err) {
-        console.error('Failed to start server:', err.message);
+    .catch(function(error) {
+        console.error('Failed to start server:', error.message);
         process.exit(1);
     });
