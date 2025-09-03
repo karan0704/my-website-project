@@ -9,71 +9,54 @@ const {login, register, updateProfile, deleteProfile} = require('../services/aut
 const {logRequest} = require('../utils/helpers');
 
 // LOGIN ROUTE - handles POST requests to /api/auth/login
-// When someone sends POST request to this URL, this function runs
-router.post('/login', function (req, res) {
-    // Log this request for debugging
-    // logRequest('POST', '/api/auth/login');
+router.post('/login', async (req, res) => {
 
-    console.log('Login request received');
+    try {
+        console.log('Login request received');
 
-    // Get username and password from request body
-    // req.body contains the JSON data sent by the client
-    const credentials = {
-        username: req.body.username,
-        password: req.body.password
-    };
+        const credentials = {
+            username: req.body.username,
+            password: req.body.password
+        };
 
-    // Call login function (which returns a Promise)
-    login(credentials)
-        .then(function (result) {
-            // Login function completed successfully
-            // result contains status (number) and body (object)
+        const result = await login(credentials); // result contains status (number) and body (object)
 
-            // Send response back to client
-            // res.status(number) sets HTTP status code (200=success, 400=error)
-            // res.json(object) sends the object as JSON response
-            res.status(result.status).json(result.body);
-        })
-        .catch(function (err) {
-            // Login function had an error
-            console.error('Server error:', err.message);
+        res.status(result.status).json(result.body); // Response back to client - status code (200=success, 400=error), JSON response
+    } catch (err) {
+        console.error('Server error:', err.message);
 
-            // Send error response to client
-            res.status(500).json({
-                success: false,
-                message: 'Server error occurred'
-            });
+        res.status(500).json({
+            success: false, message: 'Server error occurred'
         });
+    }
 });
 
-// REGISTER ROUTE - handles POST requests to /api/auth/register
-router.post('/register', function (req, res) {
-    //logRequest('POST', '/api/auth/register');
+// REGISTER ROUTE - /api/auth/register
+router.post('/register', async function (req, res) {
 
-    console.log('Registration request received');
+        try {
+            console.log('Registration request received');
 
-    // Get user data from request body
-    const userData = {
-        username: req.body.username,
-        email: req.body.email,
-        password: req.body.password
-    };
+            const userData = {
+                username: req.body.username,
+                email: req.body.email,
+                password: req.body.password
+            };
 
-    // Call register function
-    register(userData)
-        .then(function (result) {
-            // Registration completed
+            const result = await register(userData);    // Call register function
+
             res.status(result.status).json(result.body);
-        })
-        .catch(function (err) {
-            // Registration had an error
+        } catch (err) {
             console.error('Server error:', err.message);
-            res.status(500).json({
-                success: false,
-                message: 'Server error occurred'
-            });
-        });
-});
+
+            res.status(500)
+                .json({
+                    success: false, message: 'Server error occurred'
+                });
+        }
+    }
+);
+
 
 // UPDATE PROFILE ROUTE - handles PUT requests to /api/auth/profile
 router.put('/profile', function (req, res) {
@@ -95,8 +78,7 @@ router.put('/profile', function (req, res) {
         .catch(function (err) {
             console.error('Server error:', err.message);
             res.status(500).json({
-                success: false,
-                message: 'Server error occurred'
+                success: false, message: 'Server error occurred'
             });
         });
 });
@@ -106,8 +88,7 @@ router.delete('/profile', function (req, res) {
     console.log('Profile deletion request received');
 
     const deleteData = {
-        userId: req.body.userId,
-        currentPassword: req.body.currentPassword
+        userId: req.body.userId, currentPassword: req.body.currentPassword
     };
 
     deleteProfile(deleteData).then(function (result) {
@@ -116,8 +97,7 @@ router.delete('/profile', function (req, res) {
         .catch(function (err) {
             console.error('Server error:', err.message);
             res.status(500).json({
-                success: false,
-                message: 'Server error occurred'
+                success: false, message: 'Server error occurred'
             });
         });
 });

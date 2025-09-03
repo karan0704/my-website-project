@@ -36,164 +36,141 @@ function comparePasswords(password1, password2) {
     return password1 === password2;
 }
 
-// Login function using promises (not async/await)
 // Parameter: credentials object with username and password
-function login(credentials) {
+const login = async (credentials) => {
     console.log('Login attempt for:', credentials.username);
 
-    // Create and return a Promise
-    // Promise takes a function with resolve and reject parameters
-    return new Promise(function (resolve, reject) {
+    const {username, password} = credentials;
 
-        // Get username and password from credentials object
-        const username = credentials.username;
-        const password = credentials.password;
+    if (!username || !password) {
+        return {
+            status: 400,
+            body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
+        };
+    }
 
-        // Check if both username and password were provided
-        if (!username || !password) {
-            // If missing, resolve with error response
-            resolve({
-                status: 400,
-                body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
-            });
-            return; // Stop execution here
+    try {
+        const user = await User.findOne({
+            [USER_FIELDS.USERNAME]: username
+        })
+            .select(
+                `${USER_FIELDS.ID} 
+                ${USER_FIELDS.USERNAME} 
+                ${USER_FIELDS.EMAIL} 
+                ${USER_FIELDS.PASSWORD}`
+            )
+            .lean(); // Returns plain JavaScript object
+
+        if (!user) {
+            console.log('User not found');
+            return {
+                status: 401,
+                body: formatResponse(false, MSG.INVALID_CREDENTIALS)
+            };
         }
 
-        // Find user in database
-        // This returns a Promise, so we use .then() instead of await
-        User.findOne({[USER_FIELDS.USERNAME]: username})
-            .select(USER_FIELDS.ID + ' ' + USER_FIELDS.USERNAME + ' ' + USER_FIELDS.EMAIL + ' ' + USER_FIELDS.PASSWORD)
-            .lean() // Returns plain JavaScript object
-            .then(function (user) {
-                // This function runs when database search completes successfully
+        const encodedPassword = encodePassword(password);
 
-                // Check if user was found
-                if (!user) {
-                    console.log('User not found');
-                    resolve({
-                        status: 401,
-                        body: formatResponse(false, MSG.INVALID_CREDENTIALS)
-                    });
-                    return;
-                }
+        if (!comparePasswords(encodedPassword, user[USER_FIELDS.PASSWORD])) {
+            console.log('Password incorrect');
+            return {
+                status: 401,
+                body: formatResponse(false,
+                    MSG.INVALID_CREDENTIALS)
+            };
+        }
 
-                // Encode the provided password to compare with stored password
-                const encodedPassword = encodePassword(password);
+        // Extract password and keep the rest in one line
+        const {[USER_FIELDS.PASSWORD]: userPassword, ...userCopy} = user;
 
-                // Compare encoded password with stored password
-                if (!comparePasswords(encodedPassword, user[USER_FIELDS.PASSWORD])) {
-                    console.log('Password incorrect');
-                    resolve({
-                        status: 401,
-                        body: formatResponse(false, MSG.INVALID_CREDENTIALS)
-                    });
-                    return;
-                }
+        console.log('Login successful:', userCopy[USER_FIELDS.USERNAME]);
 
-                // Login successful - remove password from response
-                const userCopy = {};
-                userCopy[USER_FIELDS.ID] = user[USER_FIELDS.ID];
-                userCopy[USER_FIELDS.USERNAME] = user[USER_FIELDS.USERNAME];
-                userCopy[USER_FIELDS.EMAIL] = user[USER_FIELDS.EMAIL];
+        return {
+            status: 200,
+            body: formatResponse(true, MSG.LOGIN_SUCCESS, {user: userCopy})
+        };
 
-                console.log('Login successful:', user[USER_FIELDS.USERNAME]);
-
-                resolve({
-                    status: 200,
-                    body: formatResponse(true, MSG.LOGIN_SUCCESS, {user: userCopy})
-                });
-            })
-            .catch(function (error) {
-                // This function runs if database operation fails
-                console.error('Database error:', error.message);
-                reject(error); // Pass error to whoever called this function
-            });
-    });
+    } catch (err) {
+        console.error('Database error:', err.message);
+        throw (err); // Pass error to whoever called this function
+    }
 }
 
 // Register function using promises
-function register(userData) {
+const register = async (userData) => {
+
     console.log('Registration for:', userData.username);
 
-    return new Promise(function (resolve, reject) {
-        const username = userData.username;
-        const email = userData.email;
-        const password = userData.password;
+    const {username, email, password} = userData;
 
-        // Check all required fields
-        if (!username || !email || !password) {
-            resolve({
-                status: 400,
-                body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
-            });
-            return;
+    if (!username || !email || !password) {
+        return {
+            status: 400,
+            body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
+        };
+    }
+
+    if (!validateUsername(username)) {
+        return {
+            status: 400,
+            body: formatResponse(false, MSG.USERNAME_SHORT)
+        };
+    }
+
+    if (!validatePassword(password)) {
+        return {
+            status: 400,
+            body: formatResponse(false, MSG.PASSWORD_SHORT)
+        };
+    }
+
+    if (!validateEmail(email)) {
+        return {
+            status: 400,
+            body: formatResponse(false, MSG.EMAIL_INVALID)
+        };
+    }
+
+
+    try {
+        const newUserData = {
+            [USER_FIELDS.USERNAME]: username,
+            [USER_FIELDS.EMAIL]: email,
+            [USER_FIELDS.PASSWORD]: encodePassword(password)
+        };
+
+        const createdUser = await User.create(newUserData);
+
+        // User created successfully
+        const userResponse = {
+            [USER_FIELDS.ID]: createdUser._id,
+            [USER_FIELDS.USERNAME]: createdUser[USER_FIELDS.USERNAME],
+            [USER_FIELDS.EMAIL]: createdUser[USER_FIELDS.EMAIL],
+        };
+
+        console.log('User registered with ID:', createdUser._id);
+
+        return {
+            status: 201,
+            body: formatResponse(true,
+                MSG.REGISTER_SUCCESS,
+                {user: userResponse})
+        };
+    } catch (error) {
+        console.error('Database error:', error.message);
+
+        // Check if error is because username/email already exists
+        if (error && error.code === 11000) {
+            return {
+                status: 409, body: formatResponse(false, MSG.DUPLICATE_USER)
+            };
+        } else {
+            return {
+                status: 500, body: formatResponse(false, MSG.SERVER_ERROR)
+            };
         }
+    }
 
-        // Validate username
-        if (!validateUsername(username)) {
-            resolve({
-                status: 400,
-                body: formatResponse(false, MSG.USERNAME_SHORT)
-            });
-            return;
-        }
-
-        // Validate password
-        if (!validatePassword(password)) {
-            resolve({
-                status: 400,
-                body: formatResponse(false, MSG.PASSWORD_SHORT)
-            });
-            return;
-        }
-
-        // Validate email
-        if (!validateEmail(email)) {
-            resolve({
-                status: 400,
-                body: formatResponse(false, MSG.EMAIL_INVALID)
-            });
-            return;
-        }
-
-        // Create new user data object
-        const newUserData = {};
-        newUserData[USER_FIELDS.USERNAME] = username;
-        newUserData[USER_FIELDS.EMAIL] = email;
-        newUserData[USER_FIELDS.PASSWORD] = encodePassword(password); // Encode password
-
-        User.create(newUserData)
-            .then(function (doc) {
-                // User created successfully
-                const user = {};
-                user[USER_FIELDS.ID] = doc.id;
-                user[USER_FIELDS.USERNAME] = doc[USER_FIELDS.USERNAME];
-                user[USER_FIELDS.EMAIL] = doc[USER_FIELDS.EMAIL];
-
-                console.log('User registered with ID:', doc.id);
-
-                resolve({
-                    status: 201,
-                    body: formatResponse(true, MSG.REGISTER_SUCCESS, {user: user})
-                });
-            })
-            .catch(function (error) {
-                console.error('Database error:', error.message);
-
-                // Check if error is because username/email already exists
-                if (error && error.code === 11000) {
-                    resolve({
-                        status: 409,
-                        body: formatResponse(false, MSG.DUPLICATE_USER)
-                    });
-                } else {
-                    resolve({
-                        status: 500,
-                        body: formatResponse(false, MSG.SERVER_ERROR)
-                    });
-                }
-            });
-    });
 }
 
 // Update profile function
@@ -209,8 +186,7 @@ function updateProfile(updateData) {
         // Check if user ID and current password are provided
         if (!userId || !currentPassword) {
             resolve({
-                status: 400,
-                body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
+                status: 400, body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
             });
             return;
         }
@@ -218,8 +194,7 @@ function updateProfile(updateData) {
         // Check if at least one field to update is provided
         if (!newUsername && !newPassword) {
             resolve({
-                status: 400,
-                body: formatResponse(false, MSG.NO_CHANGES_MADE)
+                status: 400, body: formatResponse(false, MSG.NO_CHANGES_MADE)
             });
             return;
         }
@@ -231,8 +206,7 @@ function updateProfile(updateData) {
             .then(function (user) {
                 if (!user) {
                     resolve({
-                        status: 404,
-                        body: formatResponse(false, MSG.USER_NOT_FOUND)
+                        status: 404, body: formatResponse(false, MSG.USER_NOT_FOUND)
                     });
                     return;
                 }
@@ -241,8 +215,7 @@ function updateProfile(updateData) {
                 const encodedCurrentPassword = encodePassword(currentPassword);
                 if (!comparePasswords(encodedCurrentPassword, user[USER_FIELDS.PASSWORD])) {
                     resolve({
-                        status: 401,
-                        body: formatResponse(false, MSG.CURRENT_PASSWORD_INCORRECT)
+                        status: 401, body: formatResponse(false, MSG.CURRENT_PASSWORD_INCORRECT)
                     });
                     return;
                 }
@@ -254,8 +227,7 @@ function updateProfile(updateData) {
                 if (newUsername) {
                     if (!validateUsername(newUsername)) {
                         resolve({
-                            status: 400,
-                            body: formatResponse(false, MSG.USERNAME_SHORT)
+                            status: 400, body: formatResponse(false, MSG.USERNAME_SHORT)
                         });
                         return;
                     }
@@ -266,8 +238,7 @@ function updateProfile(updateData) {
                 if (newPassword) {
                     if (!validatePassword(newPassword)) {
                         resolve({
-                            status: 400,
-                            body: formatResponse(false, MSG.PASSWORD_SHORT)
+                            status: 400, body: formatResponse(false, MSG.PASSWORD_SHORT)
                         });
                         return;
                     }
@@ -275,11 +246,7 @@ function updateProfile(updateData) {
                 }
 
                 // Update the user
-                User.findByIdAndUpdate(
-                    userId,
-                    updateFields,
-                    {new: true, runValidators: true}
-                )
+                User.findByIdAndUpdate(userId, updateFields, {new: true, runValidators: true})
                     .select(USER_FIELDS.ID + ' ' + USER_FIELDS.USERNAME + ' ' + USER_FIELDS.EMAIL)
                     .lean()
                     .then(function (updatedUser) {
@@ -291,8 +258,7 @@ function updateProfile(updateData) {
                         userResponse[USER_FIELDS.EMAIL] = updatedUser[USER_FIELDS.EMAIL];
 
                         resolve({
-                            status: 200,
-                            body: formatResponse(true, MSG.PROFILE_UPDATE_SUCCESS, {user: userResponse})
+                            status: 200, body: formatResponse(true, MSG.PROFILE_UPDATE_SUCCESS, {user: userResponse})
                         });
                     })
                     .catch(function (error) {
@@ -301,13 +267,11 @@ function updateProfile(updateData) {
                         // Check if error is because username already exists
                         if (error && error.code === 11000) {
                             resolve({
-                                status: 409,
-                                body: formatResponse(false, MSG.DUPLICATE_USER)
+                                status: 409, body: formatResponse(false, MSG.DUPLICATE_USER)
                             });
                         } else {
                             resolve({
-                                status: 500,
-                                body: formatResponse(false, MSG.SERVER_ERROR)
+                                status: 500, body: formatResponse(false, MSG.SERVER_ERROR)
                             });
                         }
                     });
@@ -318,6 +282,7 @@ function updateProfile(updateData) {
             });
     });
 }
+
 // Add this function to the existing authService.js file after the updateProfile function
 
 // Delete profile function
@@ -331,8 +296,7 @@ function deleteProfile(deleteData) {
         // Check if user ID and current password are provided
         if (!userId || !currentPassword) {
             resolve({
-                status: 400,
-                body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
+                status: 400, body: formatResponse(false, MSG.ALL_FIELDS_REQUIRED)
             });
             return;
         }
@@ -344,8 +308,7 @@ function deleteProfile(deleteData) {
             .then(function (user) {
                 if (!user) {
                     resolve({
-                        status: 404,
-                        body: formatResponse(false, MSG.USER_NOT_FOUND)
+                        status: 404, body: formatResponse(false, MSG.USER_NOT_FOUND)
                     });
                     return;
                 }
@@ -354,8 +317,7 @@ function deleteProfile(deleteData) {
                 const encodedCurrentPassword = encodePassword(currentPassword);
                 if (!comparePasswords(encodedCurrentPassword, user[USER_FIELDS.PASSWORD])) {
                     resolve({
-                        status: 401,
-                        body: formatResponse(false, MSG.CURRENT_PASSWORD_INCORRECT)
+                        status: 401, body: formatResponse(false, MSG.CURRENT_PASSWORD_INCORRECT)
                     });
                     return;
                 }
@@ -366,15 +328,13 @@ function deleteProfile(deleteData) {
                         console.log('Profile deleted for user:', deletedUser[USER_FIELDS.USERNAME]);
 
                         resolve({
-                            status: 200,
-                            body: formatResponse(true, MSG.PROFILE_DELETE_SUCCESS)
+                            status: 200, body: formatResponse(true, MSG.PROFILE_DELETE_SUCCESS)
                         });
                     })
                     .catch(function (error) {
                         console.error('Delete error:', error.message);
                         resolve({
-                            status: 500,
-                            body: formatResponse(false, MSG.SERVER_ERROR)
+                            status: 500, body: formatResponse(false, MSG.SERVER_ERROR)
                         });
                     });
             })
@@ -387,9 +347,5 @@ function deleteProfile(deleteData) {
 
 // Update the exports to include the new function
 module.exports = {
-    login: login,
-    register: register,
-    updateProfile: updateProfile,
-    deleteProfile: deleteProfile
+    login: login, register: register, updateProfile: updateProfile, deleteProfile: deleteProfile
 };
-

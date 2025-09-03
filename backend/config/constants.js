@@ -42,6 +42,7 @@ module.exports = {
         PROFILE_UPDATE_SUCCESS: 'Profile updated successfully',
         CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
         USER_NOT_FOUND: 'User not found',
-        NO_CHANGES_MADE: 'No changes were made'
+        NO_CHANGES_MADE: 'No changes were made',
+        PROFILE_DELETE_SUCCESS: 'Profile deleted successfully'
     },
 };
